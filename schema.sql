@@ -123,6 +123,10 @@ create policy "Hosts can manage players" on public.players
   );
 create policy "Public can view players" on public.players
   for select using (true);
+create policy "Public can join games" on public.players
+  for insert with check (true);
+create policy "Players can update own record" on public.players
+  for update using (true);
 -- Note: Insert and update of players connection states will be gated/verified through secure server endpoints (Next.js backend) to prevent client-side profile hijacks.
 
 -- Answers Submitted policies
