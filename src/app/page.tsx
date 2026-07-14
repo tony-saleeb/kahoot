@@ -392,69 +392,107 @@ export default function LandingPage() {
                       </Button>
                     </div>
                   ) : (
-                    <form onSubmit={handleHostAuth} className="space-y-4">
-                      {authMode === 'signup' && (
+                    <div className="space-y-4">
+                      {/* Google Sign-In Button */}
+                      <Button
+                        type="button"
+                        disabled={authLoading}
+                        onClick={async () => {
+                          setAuthLoading(true);
+                          const { error } = await supabase.auth.signInWithOAuth({
+                            provider: 'google',
+                            options: {
+                              redirectTo: `${window.location.origin}/auth/callback`,
+                            },
+                          });
+                          if (error) {
+                            toast.error(error.message);
+                            setAuthLoading(false);
+                          }
+                        }}
+                        className="w-full bg-white hover:bg-slate-100 text-slate-800 font-bold h-12 rounded-xl text-sm shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99] duration-300 flex items-center justify-center gap-3 border border-slate-200"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        Continue with Google
+                      </Button>
+
+                      {/* Divider */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-px bg-slate-800" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">or</span>
+                        <div className="flex-1 h-px bg-slate-800" />
+                      </div>
+
+                      {/* Email/Password Form */}
+                      <form onSubmit={handleHostAuth} className="space-y-4">
+                        {authMode === 'signup' && (
+                          <div className="space-y-1.5">
+                            <Label htmlFor="displayName" className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider pl-1">
+                              Display Name
+                            </Label>
+                            <Input
+                              id="displayName"
+                              placeholder="Mr. Presenter"
+                              type="text"
+                              value={displayName}
+                              onChange={(e) => setDisplayName(e.target.value)}
+                              className="bg-slate-950/60 border-slate-850 h-11 focus-visible:ring-violet-500 rounded-xl"
+                            />
+                          </div>
+                        )}
                         <div className="space-y-1.5">
-                          <Label htmlFor="displayName" className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider pl-1">
-                            Display Name
+                          <Label htmlFor="email" className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider pl-1">
+                            Email Address
                           </Label>
                           <Input
-                            id="displayName"
-                            placeholder="Mr. Presenter"
-                            type="text"
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
+                            id="email"
+                            placeholder="host@quizarena.com"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="bg-slate-950/60 border-slate-850 h-11 focus-visible:ring-violet-500 rounded-xl"
                           />
                         </div>
-                      )}
-                      <div className="space-y-1.5">
-                        <Label htmlFor="email" className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider pl-1">
-                          Email Address
-                        </Label>
-                        <Input
-                          id="email"
-                          placeholder="host@quizarena.com"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="bg-slate-950/60 border-slate-850 h-11 focus-visible:ring-violet-500 rounded-xl"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="password" className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider pl-1">
-                          Password
-                        </Label>
-                        <Input
-                          id="password"
-                          placeholder="••••••••"
-                          type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="bg-slate-950/60 border-slate-850 h-11 focus-visible:ring-violet-500 rounded-xl"
-                        />
-                      </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="password" className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider pl-1">
+                            Password
+                          </Label>
+                          <Input
+                            id="password"
+                            placeholder="••••••••"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="bg-slate-950/60 border-slate-850 h-11 focus-visible:ring-violet-500 rounded-xl"
+                          />
+                        </div>
 
-                      <Button
-                        type="submit"
-                        disabled={authLoading}
-                        className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold h-12 rounded-xl text-base shadow-lg shadow-violet-500/20 hover:shadow-violet-500/35 transition-all hover:scale-[1.01] active:scale-[0.99] duration-300 mt-2"
-                      >
-                        {authLoading ? 'Please wait...' : authMode === 'login' ? 'Host Login' : 'Host Sign Up'}
-                      </Button>
-
-                      <div className="text-center pt-2">
-                        <button
-                          type="button"
-                          onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                          className="text-xs text-violet-400 hover:text-violet-300 font-semibold underline underline-offset-4"
+                        <Button
+                          type="submit"
+                          disabled={authLoading}
+                          className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold h-12 rounded-xl text-base shadow-lg shadow-violet-500/20 hover:shadow-violet-500/35 transition-all hover:scale-[1.01] active:scale-[0.99] duration-300 mt-2"
                         >
-                          {authMode === 'login'
-                            ? "Don't have an account? Sign Up"
-                            : 'Already have an account? Log In'}
-                        </button>
-                      </div>
-                    </form>
+                          {authLoading ? 'Please wait...' : authMode === 'login' ? 'Host Login' : 'Host Sign Up'}
+                        </Button>
+
+                        <div className="text-center pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                            className="text-xs text-violet-400 hover:text-violet-300 font-semibold underline underline-offset-4"
+                          >
+                            {authMode === 'login'
+                              ? "Don't have an account? Sign Up"
+                              : 'Already have an account? Log In'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   )}
                 </CardContent>
               </Card>
