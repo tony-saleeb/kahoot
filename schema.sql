@@ -137,6 +137,8 @@ create policy "Hosts can read answers submitted" on public.answers_submitted
       where game_sessions.id = answers_submitted.session_id and game_sessions.host_id = auth.uid()
     )
   );
+create policy "Public can view answers submitted" on public.answers_submitted
+  for select using (true);
 -- Note: Insert and update of submissions is strictly handled via Next.js backend API /api/submit-answer using high-privilege client, enforcing timer rules.
 
 
