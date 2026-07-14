@@ -28,6 +28,7 @@ import {
   createQuiz,
   deleteQuiz,
   cloneQuiz,
+  createTemplateQuiz,
 } from '@/app/actions/quizzes';
 import { createGameSession } from '@/app/actions/game';
 import {
@@ -40,6 +41,7 @@ import {
   Calendar,
   Layers,
   LogOut,
+  BookTemplate,
 } from 'lucide-react';
 
 interface Quiz {
@@ -110,6 +112,19 @@ export default function DashboardClient({
       toast.error(message);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // Create Template Quiz Handler
+  const handleCreateTemplate = async () => {
+    const loadingToast = toast.loading('Creating template quiz with 30 questions...');
+    try {
+      const newQuiz = await createTemplateQuiz();
+      toast.success('Template quiz created with 30 questions!', { id: loadingToast });
+      setQuizzes([newQuiz, ...quizzes]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create template quiz.';
+      toast.error(message, { id: loadingToast });
     }
   };
 
@@ -203,12 +218,20 @@ export default function DashboardClient({
               Manage your reusable quiz templates and host interactive live rooms.
             </p>
           </div>
-          <Button
-            onClick={() => setCreateDialogOpen(true)}
-            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold h-11 px-5 rounded-xl shadow-lg shadow-violet-500/20 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Create New Quiz
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleCreateTemplate}
+              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold h-11 px-5 rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-2"
+            >
+              <BookTemplate className="w-4 h-4" /> Use Template
+            </Button>
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold h-11 px-5 rounded-xl shadow-lg shadow-violet-500/20 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Create New Quiz
+            </Button>
+          </div>
         </div>
 
         {/* Quizzes Grid */}
