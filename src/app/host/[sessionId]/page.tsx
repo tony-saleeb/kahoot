@@ -15,67 +15,63 @@ export default async function HostSessionPage({ params }: HostSessionPageProps) 
   const { sessionId } = params;
   const supabase = createClient();
 
-  // Get current authenticated user
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  // Run auth check and session fetch in parallel
+  const [authResult, sessionResult] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('game_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single(),
+  ]);
 
+  const { data: { user }, error: authError } = authResult;
   if (authError || !user) {
     redirect('/');
   }
 
-  // Fetch game session
-  const { data: session, error: sessionError } = await supabase
-    .from('game_sessions')
-    .select('*')
-    .eq('id', sessionId)
-    .eq('host_id', user.id)
-    .single();
-
-  if (sessionError || !session) {
+  const { data: session, error: sessionError } = sessionResult;
+  if (sessionError || !session || session.host_id !== user.id) {
     redirect('/dashboard');
   }
 
-  // Fetch quiz settings
-  const { data: quiz, error: quizError } = await supabase
-    .from('quizzes')
-    .select('*')
-    .eq('id', session.quiz_id)
-    .single();
+  // Fetch quiz, questions, and players all in parallel
+  const [quizResult, questionsResult, playersResult] = await Promise.all([
+    supabase
+      .from('quizzes')
+      .select('*')
+      .eq('id', session.quiz_id)
+      .single(),
+    supabase
+      .from('questions')
+      .select('*')
+      .eq('quiz_id', session.quiz_id)
+      .order('order_index', { ascending: true }),
+    supabase
+      .from('players')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('joined_at', { ascending: true }),
+  ]);
 
+  const { data: quiz, error: quizError } = quizResult;
   if (quizError || !quiz) {
     redirect('/dashboard');
   }
 
-  // Fetch questions
-  const { data: questions, error: questionsError } = await supabase
-    .from('questions')
-    .select('*')
-    .eq('quiz_id', quiz.id)
-    .order('order_index', { ascending: true });
-
-  if (questionsError) {
-    console.error('Error fetching questions:', questionsError);
+  if (questionsResult.error) {
+    console.error('Error fetching questions:', questionsResult.error);
   }
-
-  // Fetch players already in room
-  const { data: players, error: playersError } = await supabase
-    .from('players')
-    .select('*')
-    .eq('session_id', sessionId)
-    .order('joined_at', { ascending: true });
-
-  if (playersError) {
-    console.error('Error fetching players:', playersError);
+  if (playersResult.error) {
+    console.error('Error fetching players:', playersResult.error);
   }
 
   return (
     <HostGameClient
       initialSession={session}
       quiz={quiz}
-      questions={questions || []}
-      initialPlayers={players || []}
+      questions={questionsResult.data || []}
+      initialPlayers={playersResult.data || []}
     />
   );
 }

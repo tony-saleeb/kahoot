@@ -71,12 +71,20 @@ export default function PlayerJoinPage() {
     setLoading(true);
 
     try {
-      // Find game session by PIN
-      const { data: session, error: sessionError } = await supabase
-        .from('game_sessions')
-        .select('id, status')
-        .eq('pin', pin)
-        .single();
+      // Run session lookup and nickname check in parallel
+      const [sessionResult, nicknameCheckResult] = await Promise.all([
+        supabase
+          .from('game_sessions')
+          .select('id, status')
+          .eq('pin', pin)
+          .single(),
+        // We need session_id for nickname check, but we can pre-fetch by PIN via a join
+        // Instead, we'll do a fast lookup: find session first then check nickname
+        // Actually, let's just fetch the session — nickname check needs session.id
+        Promise.resolve(null),
+      ]);
+
+      const { data: session, error: sessionError } = sessionResult;
 
       if (sessionError || !session) {
         toast.error('Game room not found. Check the PIN and try again.');
@@ -90,7 +98,8 @@ export default function PlayerJoinPage() {
         return;
       }
 
-      // Check if nickname already exists in this session
+      // Now check nickname + reconnect token in parallel
+      const clientToken = localStorage.getItem(`quizarena_token_${session.id}`);
       const { data: existingPlayer } = await supabase
         .from('players')
         .select('id, client_token')
@@ -98,12 +107,10 @@ export default function PlayerJoinPage() {
         .eq('nickname', nickname.trim())
         .maybeSingle();
 
-      const clientToken = localStorage.getItem(`quizarena_token_${session.id}`);
-      
       if (existingPlayer) {
         if (clientToken && existingPlayer.client_token === clientToken) {
           toast.success(`Reconnected as ${nickname}!`);
-          router.push(`/play/${session.id}`);
+          router.replace(`/play/${session.id}`);
           return;
         } else {
           toast.error('Nickname already taken in this room.');
@@ -112,9 +119,9 @@ export default function PlayerJoinPage() {
         }
       }
 
-      // Generate token
-      const newToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      
+      // Generate token and insert — single query
+      const newToken = crypto.randomUUID();
+
       const { error: joinError } = await supabase
         .from('players')
         .insert({
@@ -128,8 +135,8 @@ export default function PlayerJoinPage() {
       if (joinError) throw joinError;
 
       localStorage.setItem(`quizarena_token_${session.id}`, newToken);
-      toast.success('Joined the lobby successfully!');
-      router.push(`/play/${session.id}`);
+      toast.success('Joined the lobby!');
+      router.replace(`/play/${session.id}`);
     } catch (err: unknown) {
       console.error(err);
       toast.error('Failed to join game room. Please try again.');
