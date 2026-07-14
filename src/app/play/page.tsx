@@ -71,18 +71,12 @@ export default function PlayerJoinPage() {
     setLoading(true);
 
     try {
-      // Run session lookup and nickname check in parallel
-      const [sessionResult, nicknameCheckResult] = await Promise.all([
-        supabase
-          .from('game_sessions')
-          .select('id, status')
-          .eq('pin', pin)
-          .single(),
-        // We need session_id for nickname check, but we can pre-fetch by PIN via a join
-        // Instead, we'll do a fast lookup: find session first then check nickname
-        // Actually, let's just fetch the session — nickname check needs session.id
-        Promise.resolve(null),
-      ]);
+      // Run session lookup
+      const sessionResult = await supabase
+        .from('game_sessions')
+        .select('id, status')
+        .eq('pin', pin)
+        .single();
 
       const { data: session, error: sessionError } = sessionResult;
 
